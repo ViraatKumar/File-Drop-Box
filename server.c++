@@ -10,8 +10,10 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 #include <vector>
+#include <chrono>
 using namespace std;
-#define PORTNO 10000
+#define MAX_USERS 4
+#define PORTNO 10001
 struct sockaddr_in server, client;
 struct TextFile
 {
@@ -92,7 +94,6 @@ struct USER *clientAuthentication(int newsockfd)
             4)	else return error message and terminate client connection to server.
             4) could also ask for username and password again x number of times, after which
                 message "number of attempts execeeded" could be displayed.
-
         ~~~
     */
     while (1)
@@ -175,17 +176,38 @@ int getSocket()
 }
 int getConnection(int sockfd)
 {
+    cout << "hllo\n";
     int clilen = sizeof(clilen);
+
     int newsockfd = accept(sockfd, (struct sockaddr *)&client, (socklen_t *)&clilen);
-    std::thread clientThread(&clientFunctions, newsockfd);
-    clientThread.join();
+
+    clientFunctions(newsockfd);
+}
+void dummy_method(int a)
+{
+    cout << "hi dummmy\n";
 }
 int main()
 {
     poplateHashMap();
     int sockfd = getSocket();
+    // std::thread t[MAX_USERS];
+    thread t[100];
+    int counter = 0;
     while (1)
     {
-        getConnection(sockfd); // get connection and execute client functions here only
+
+        t[0] = thread(&getConnection, sockfd);
+        t[1] = thread(&getConnection, sockfd);
+        t[2] = thread(&getConnection, sockfd);
+        t[3] = thread(&getConnection, sockfd);
+        t[4] = thread(&getConnection, sockfd);
+        t[5] = thread(&getConnection, sockfd);
+        t[0].join();
+        t[1].join();
+        t[2].join();
+        t[3].join();
+        t[4].join();
+        t[5].join();
     }
 }

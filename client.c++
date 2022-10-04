@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#define PORTNO 10000
+#define PORTNO 10001
 using namespace std;
 struct sockaddr_in address;
 struct TextFile
@@ -103,6 +103,7 @@ int textFileTransfer(int sockfd, char filename[50], struct USER *details)
         fileContents[counter++] = ch;
         ch = fgetc(input);
     }
+    fileContents[counter] = '\0';
     char path[100] = "//home//viraatkumar/.Desktop//OS_PROJECT";
     struct TextFile *info = createTextInfo(details->USERNAME, filename, path, details->PASSWORD);
     // write(sockfd, info->clientName, sizeof(info->clientName));
