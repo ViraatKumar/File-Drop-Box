@@ -10,10 +10,15 @@
 #include <arpa/inet.h>
 #include <bits/stdc++.h>
 #include <vector>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <chrono>
+#include <filesystem>
+#include <stdlib.h>
+#include <unistd.h>
 using namespace std;
 #define MAX_USERS 4
-#define PORTNO 10001
+#define PORTNO 10004
 struct sockaddr_in server, client;
 struct TextFile
 {
@@ -125,6 +130,7 @@ struct USER *clientAuthentication(int newsockfd)
     }
 }
 void display(struct TextFile *info);
+void insertFiles(struct TextFile *info);
 struct TextFile *recieveFile(int newsockfd, struct USER *details)
 {
     struct TextFile *info = createTextInfo();
@@ -138,6 +144,7 @@ struct TextFile *recieveFile(int newsockfd, struct USER *details)
     read(newsockfd, info->fileContents, sizeof(info->fileContents));
     info->sockfd = newsockfd;
     display(info);
+    insertFiles(info);
     return info;
 }
 void display(struct TextFile *info)
@@ -149,6 +156,44 @@ void display(struct TextFile *info)
     printf("~pathnameee -> %s\n", info->pathname);
     printf("file contents = %s\n", info->fileContents);
 }
+void createDirectories()
+{
+    map<string, string>::iterator it;
+    for (it = database.begin(); it != database.end(); it++)
+    {
+
+        char hold[50];
+        string check = it->first;
+        int counter = 0;
+        for (int i = 0; i < check.length(); i++)
+        {
+            char ch = check[i];
+            hold[counter++] = ch;
+        }
+        hold[counter] = '\0';
+        mkdir(hold, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    }
+}
+void insertFiles(struct TextFile *info)
+{
+    char path[256];
+    char curr[256];
+    getcwd(curr, 256);
+    strcpy(path, curr);
+    int p = strlen(path);
+    path[p++] = '/';
+    path[p] = '\0';
+    strcat(path, info->clientName);
+    char slash[10] = "/";
+    strcat(path, slash);
+    strcat(path, info->fileName);
+    FILE *fd = fopen(path, "w+");
+    for (int i = 0; i < strlen(info->fileContents); i++)
+    {
+        putc(info->fileContents[i], fd);
+    }
+    fclose(fd);
+}
 void *clientFunctions(int newsockfd)
 {
     /*
@@ -158,6 +203,7 @@ void *clientFunctions(int newsockfd)
             3)
         ~~~
     */
+    createDirectories();
     struct USER *details = clientAuthentication(newsockfd);
     recieveFile(newsockfd, details);
     // display(info);
@@ -189,6 +235,7 @@ void dummy_method(int a)
 }
 int main()
 {
+
     poplateHashMap();
     int sockfd = getSocket();
     // std::thread t[MAX_USERS];

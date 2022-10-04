@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#define PORTNO 10001
+#define PORTNO 10004
 using namespace std;
 struct sockaddr_in address;
 struct TextFile
