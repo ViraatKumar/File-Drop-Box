@@ -15,15 +15,23 @@ using namespace std;
 struct sockaddr_in server, client;
 struct TextFile
 {
-    // char *clientName;
-    // char *fileName;
-    // char *pathname;
+    int sockfd;
     char clientName[50];
     char fileName[50];
     char pathname[100];
     char fileContents[10000];
     char password[50];
 };
+struct USER
+{
+    char USERNAME[50];
+    char PASSWORD[50];
+};
+struct USER *createLOGIN()
+{
+    struct USER *info = (struct USER *)malloc(sizeof(USER));
+    return info;
+}
 struct TextFile *createTextInfo()
 {
     struct TextFile *info = (struct TextFile *)malloc(sizeof(struct TextFile));
@@ -73,7 +81,7 @@ void poplateHashMap()
         database.insert({username_vector[i], password_vector[i]});
     }
 }
-int clientAuthentication(struct TextFile *info)
+struct USER *clientAuthentication(int newsockfd)
 {
     /*
         ~~~
@@ -87,33 +95,48 @@ int clientAuthentication(struct TextFile *info)
 
         ~~~
     */
-    // string username="";
-    // string password="";
-    // strcpy(username,info->clientName);
-    // strcpy(password,info->password);
-    // cout<<"username = "<<username;
-    // cout<<"\npassword = "<<password<<endl;
-    // if(database.find(username)!=database.end()){
-    // 	if(!strcmp(database[username],info->password)){
-    // 		cout<<"****USER AUTHORIZED****"<<endl;
-    // 	}
-    // 	else{
-    // 		cout<<"****INNCORRECT PASSWORD****\n";
-    // 	}
-    // }
-    // else
-    // 	cout<<"****INNCORRECT USERNAME****\n";
+    while (1)
+    {
+        struct USER *details = createLOGIN();
+        char message[50];
+        read(newsockfd, details->USERNAME, sizeof(details->USERNAME));
+        read(newsockfd, details->PASSWORD, sizeof(details->PASSWORD));
+        string username = details->USERNAME;
+        string password = details->PASSWORD;
+        if (database.find(username) != database.end())
+        {
+            if (!database[username].compare(password))
+            {
+                strcpy(message, "****USER-AUTHORIZED****");
+                write(newsockfd, message, sizeof(message));
+                return details;
+            }
+            else
+            {
+                strcpy(message, "****INNCORRECT-PASSWORD****\n");
+            }
+        }
+        else
+            strcpy(message, "****INNCORRECT-USERNAME****\n");
+        // cout << "password = " << database[username] << endl;
+        //  sending authentication message back to client
+        write(newsockfd, message, sizeof(message));
+    }
 }
-struct TextFile *recieveFile(int newsockfd)
+void display(struct TextFile *info);
+struct TextFile *recieveFile(int newsockfd, struct USER *details)
 {
     struct TextFile *info = createTextInfo();
     FILE *fp = fopen("input.txt", "r");
-    read(newsockfd, info->clientName, sizeof(info->clientName));
-    read(newsockfd, info->password, sizeof(info->password));
+    // read(newsockfd, info->clientName, sizeof(info->clientName));
+    // read(newsockfd, info->password, sizeof(info->password));
+    strcpy(info->clientName, details->USERNAME);
+    strcpy(info->password, details->PASSWORD);
     read(newsockfd, info->fileName, sizeof(info->fileName));
     read(newsockfd, info->pathname, sizeof(info->pathname));
     read(newsockfd, info->fileContents, sizeof(info->fileContents));
-
+    info->sockfd = newsockfd;
+    display(info);
     return info;
 }
 void display(struct TextFile *info)
@@ -125,7 +148,7 @@ void display(struct TextFile *info)
     printf("~pathnameee -> %s\n", info->pathname);
     printf("file contents = %s\n", info->fileContents);
 }
-void *clientFunctions(int param)
+void *clientFunctions(int newsockfd)
 {
     /*
         ~~~
@@ -134,9 +157,9 @@ void *clientFunctions(int param)
             3)
         ~~~
     */
-    struct TextFile *info = recieveFile(param);
-    clientAuthentication(info);
-    display(info);
+    struct USER *details = clientAuthentication(newsockfd);
+    recieveFile(newsockfd, details);
+    // display(info);
 }
 
 int getSocket()
@@ -160,12 +183,9 @@ int getConnection(int sockfd)
 int main()
 {
     poplateHashMap();
-    // int sockfd = getSocket();
-    // while(1){
-    // getConnection(sockfd);
-    // }
-    // printf("starting\n");
-    map<string, string>::iterator it;
-    it = database.begin();
-    cout << "password for viraat = " << it->first << endl;
+    int sockfd = getSocket();
+    while (1)
+    {
+        getConnection(sockfd); // get connection and execute client functions here only
+    }
 }

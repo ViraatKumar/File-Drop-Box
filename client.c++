@@ -6,8 +6,9 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <iostream>
 #define PORTNO 10000
-using namepspace std;
+using namespace std;
 struct sockaddr_in address;
 struct TextFile
 {
@@ -20,6 +21,18 @@ struct TextFile
     char fileName[50];
     char pathname[100];
 };
+struct USER
+{
+    char USERNAME[50];
+    char PASSWORD[50];
+};
+struct USER *createLogIn(char USERNAME[50], char PASSWORD[50])
+{
+    struct USER *info = (struct USER *)malloc(sizeof(struct USER));
+    strcpy(info->USERNAME, USERNAME);
+    strcpy(info->PASSWORD, PASSWORD);
+    return info;
+}
 struct TextFile *createTextInfo(char name[50], char fileName[50], char pathname[100], char password[50])
 {
     struct TextFile *info = (struct TextFile *)malloc(sizeof(struct TextFile));
@@ -40,14 +53,40 @@ int getSocket()
     address.sin_port = htons(PORTNO);
     return sockfd;
 }
-int getConnection(int sockfd)
+void getConnection(int sockfd)
 {
     connect(sockfd, (struct sockaddr *)&address, sizeof(address));
 }
-int textFileTransfer(int sockfd, char filename[50])
+struct USER *userAuthentication(int sockfd)
 {
-    // we will transfer line by line
-    // printf("hello\n");
+    while (1)
+    {
+        char name[50];
+        char password[50];
+        printf("USERNAME : ");
+        scanf("%s", name);
+        printf("PASSWORD : ");
+        scanf("%s", password);
+        char message[50];
+        // send username and password
+        write(sockfd, name, sizeof(name));
+        write(sockfd, password, sizeof(password));
+        // read authentication message from server
+        read(sockfd, message, sizeof(message));
+        if (!strcmp(message, "****USER-AUTHORIZED****"))
+        {
+            cout << "USER AUTHORIZED" << endl;
+            struct USER *info = createLogIn(name, password);
+            return info;
+        }
+        else
+        {
+            cout << message << "\tTry again Please..." << endl;
+        }
+    }
+}
+int textFileTransfer(int sockfd, char filename[50], struct USER *details)
+{
     FILE *input = fopen(filename, "r");
     if (input == NULL)
     {
@@ -64,28 +103,36 @@ int textFileTransfer(int sockfd, char filename[50])
         fileContents[counter++] = ch;
         ch = fgetc(input);
     }
-    char name[50] = "viraat kumar";
-    char password[50];
-    printf("USERNAME : ");
-    scanf("%s", name);
-    printf("PASSWORD : ");
-    scanf("%s", password);
     char path[100] = "//home//viraatkumar/.Desktop//OS_PROJECT";
-    struct TextFile *info = createTextInfo(name, filename, path, password);
-    // printf("info of file\nname = %s\nfilename = %s\npathname = %s\n",info->clientName,info->fileName,info->pathname);
-    // printf("fileContents = %s\n",fileContents);
-    write(sockfd, info->clientName, sizeof(info->clientName));
-    write(sockfd, info->password, sizeof(info->password));
+    struct TextFile *info = createTextInfo(details->USERNAME, filename, path, details->PASSWORD);
+    // write(sockfd, info->clientName, sizeof(info->clientName));
+    // write(sockfd, info->password, sizeof(info->password));
+    strcpy(info->clientName, details->USERNAME);
+    strcpy(info->password, details->PASSWORD);
     write(sockfd, info->fileName, sizeof(info->fileName));
     write(sockfd, info->pathname, sizeof(info->pathname));
     write(sockfd, fileContents, sizeof(fileContents));
 }
-int main()
+void clientFunctions()
 {
+    // Get connection
     int sockfd = getSocket();
     getConnection(sockfd);
+    // Get log-in Details
+    struct USER *details = userAuthentication(sockfd);
+    // Execute File transfer
+    char FILENAME[50];
+    cout << "ENTER FILE NAME: ";
+    scanf("%s", FILENAME);
+    textFileTransfer(sockfd, FILENAME, details);
+}
+int main()
+{
+    clientFunctions();
+    // int sockfd = getSocket();
+    // getConnection(sockfd);
+    // // char filename[50] = "input.txt";
     // char filename[50] = "input.txt";
-    char filename[50] = "input.txt";
-    textFileTransfer(sockfd, filename);
+    // //textFileTransfer(sockfd, filename);
     printf("work done...finishing\n");
 }
