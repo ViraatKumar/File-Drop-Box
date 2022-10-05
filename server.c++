@@ -18,7 +18,7 @@
 #include <unistd.h>
 using namespace std;
 #define MAX_USERS 4
-#define PORTNO 10004
+#define PORTNO 10005
 struct sockaddr_in server, client;
 struct TextFile
 {
@@ -143,7 +143,7 @@ struct TextFile *recieveFile(int newsockfd, struct USER *details)
     read(newsockfd, info->pathname, sizeof(info->pathname));
     read(newsockfd, info->fileContents, sizeof(info->fileContents));
     info->sockfd = newsockfd;
-    display(info);
+    // display(info);
     insertFiles(info);
     return info;
 }
@@ -162,7 +162,8 @@ void createDirectories()
     for (it = database.begin(); it != database.end(); it++)
     {
 
-        char hold[50];
+        char hold[100];
+        char USERS[100] = "USERS/";
         string check = it->first;
         int counter = 0;
         for (int i = 0; i < check.length(); i++)
@@ -171,7 +172,9 @@ void createDirectories()
             hold[counter++] = ch;
         }
         hold[counter] = '\0';
-        mkdir(hold, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        strcat(USERS, hold);
+        // printf("file name in create_directories = %s\n",USERS);
+        mkdir(USERS, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
 }
 void insertFiles(struct TextFile *info)
@@ -183,11 +186,14 @@ void insertFiles(struct TextFile *info)
     int p = strlen(path);
     path[p++] = '/';
     path[p] = '\0';
+    char users[100] = "USERS/";
+    strcat(path, users);
     strcat(path, info->clientName);
     char slash[10] = "/";
     strcat(path, slash);
     strcat(path, info->fileName);
     FILE *fd = fopen(path, "w+");
+    // printf("final path = %s\n",path);
     for (int i = 0; i < strlen(info->fileContents); i++)
     {
         putc(info->fileContents[i], fd);
@@ -205,7 +211,18 @@ void *clientFunctions(int newsockfd)
     */
     createDirectories();
     struct USER *details = clientAuthentication(newsockfd);
-    recieveFile(newsockfd, details);
+    int MENU_OPTION = 0;
+    while (1)
+    {
+        read(newsockfd, &MENU_OPTION, sizeof(MENU_OPTION));
+        if (MENU_OPTION == 0)
+        {
+            printf("%s Has Exited \n", details->USERNAME);
+            break;
+        }
+        // printf("MENU OPTION RECIVED = %d\n",MENU_OPTION);
+        recieveFile(newsockfd, details);
+    }
     // display(info);
 }
 
@@ -222,9 +239,7 @@ int getSocket()
 }
 int getConnection(int sockfd)
 {
-    cout << "hllo\n";
     int clilen = sizeof(clilen);
-
     int newsockfd = accept(sockfd, (struct sockaddr *)&client, (socklen_t *)&clilen);
 
     clientFunctions(newsockfd);

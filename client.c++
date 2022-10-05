@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
-#define PORTNO 10004
+#define PORTNO 10005
 using namespace std;
 struct sockaddr_in address;
 struct TextFile
@@ -121,19 +121,59 @@ void clientFunctions()
     getConnection(sockfd);
     // Get log-in Details
     struct USER *details = userAuthentication(sockfd);
+    int choice = 0;
+    while (1)
+    {
+        cout << "\tMENU\t\n";
+        cout << "1: UPLOAD\n2: DOWNLOAD\n3:DELETE\n0:EXIT\n";
+        cout << "ENTER : ";
+        cin >> choice;
+        int flag = 0;
+        switch (choice)
+        {
+        case 1:
+        {
+
+            char FILENAME[50];
+            cout << "ENTER FILE NAME: ";
+            scanf("%s", FILENAME);
+            write(sockfd, &choice, sizeof(choice));
+            textFileTransfer(sockfd, FILENAME, details);
+            break;
+        }
+        case 2:
+        {
+            char FILENAME[50];
+            cout << "ENTER FILENAME : ";
+            scanf("%s", FILENAME);
+            // display all avalible files first
+            // write download code
+            flag = 1;
+            break;
+        }
+        case 3:
+        {
+            // delete file from server
+            flag = 1;
+            break;
+        }
+        case 0:
+        {
+            write(sockfd, &choice, sizeof(choice));
+            flag = 1;
+            break;
+        }
+        default:
+        {
+            cout << "TRY AGAIN\n";
+        }
+        }
+        if (flag == 1)
+            break;
+    }
     // Execute File transfer
-    char FILENAME[50];
-    cout << "ENTER FILE NAME: ";
-    scanf("%s", FILENAME);
-    textFileTransfer(sockfd, FILENAME, details);
 }
 int main()
 {
     clientFunctions();
-    // int sockfd = getSocket();
-    // getConnection(sockfd);
-    // // char filename[50] = "input.txt";
-    // char filename[50] = "input.txt";
-    // //textFileTransfer(sockfd, filename);
-    printf("work done...finishing\n");
 }
