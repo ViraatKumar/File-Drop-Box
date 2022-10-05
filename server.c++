@@ -211,13 +211,14 @@ void *clientFunctions(int newsockfd)
     */
     createDirectories();
     struct USER *details = clientAuthentication(newsockfd);
+    printf("%s Has Logged In.\n", details->USERNAME);
     int MENU_OPTION = 0;
     while (1)
     {
         read(newsockfd, &MENU_OPTION, sizeof(MENU_OPTION));
         if (MENU_OPTION == 0)
         {
-            printf("%s Has Exited \n", details->USERNAME);
+            printf("%s Has Logged Off \n", details->USERNAME);
             break;
         }
         // printf("MENU OPTION RECIVED = %d\n",MENU_OPTION);
