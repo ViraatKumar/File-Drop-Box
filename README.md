@@ -16,3 +16,7 @@ Operating Systems 5th Semester Project.
 1. Simple run the client code with the server IP address
 2. type in the file location relative to your current directory.
    note: Could explore DNS for server resolution.
+
+
+
+**********EXECUTED ON LINUX OS****************
